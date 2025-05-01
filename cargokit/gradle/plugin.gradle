@@ -150,7 +150,9 @@ class CargoKitPlugin implements Plugin<Project> {
                 }
 
                 if (plugin.project.android.ndkVersion == null) {
-                    throw new GradleException("Please set 'android.ndkVersion' in 'app/build.gradle'.")
+                    // Set a default NDK version instead of throwing an error
+                    plugin.project.android.ndkVersion = "25.1.8937393"
+                    println "NDK version not found in build.gradle. Setting default: ${plugin.project.android.ndkVersion}"
                 }
 
                 def task = project.tasks.create(taskName, CargoKitBuildTask.class) {
