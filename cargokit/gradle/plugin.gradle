@@ -120,21 +120,6 @@ class CargoKitPlugin implements Plugin<Project> {
 
         def cargoBuildDir = "${project.buildDir}/build"
         
-        // Set the NDK version early during project evaluation
-        project.afterEvaluate {
-            if (plugin.project.android.ndkVersion == null) {
-                // We're in afterEvaluate but before variant configuration,
-                // which is the right time to set this property
-                try {
-                    plugin.project.android.ndkVersion = "25.1.8937393"
-                    println "NDK version not found in build.gradle. Setting default: ${plugin.project.android.ndkVersion}"
-                } catch (Exception e) {
-                    println "Could not set NDK version automatically: ${e.message}"
-                    // Continue without failing - we'll handle this later
-                }
-            }
-        }
-        
         // Determine if the project is an application or library
         def isApplication = plugin.project.plugins.hasPlugin('com.android.application')
         def variants = isApplication ? plugin.project.android.applicationVariants : plugin.project.android.libraryVariants
@@ -164,14 +149,15 @@ class CargoKitPlugin implements Plugin<Project> {
                     return
                 }
 
-                // Instead of setting NDK version here, use what's available or a hardcoded fallback
-                def ndkVersionToUse = plugin.project.android.ndkVersion ?: "25.1.8937393"
-                
+                if (plugin.project.android.ndkVersion == null) {
+                    throw new GradleException("Please set 'android.ndkVersion' in 'app/build.gradle'.")
+                }
+
                 def task = project.tasks.create(taskName, CargoKitBuildTask.class) {
                     buildMode = variant.buildType.name
                     buildDir = cargoBuildDir
                     outputDir = cargoOutputDir
-                    ndkVersion = ndkVersionToUse
+                    ndkVersion = plugin.project.android.ndkVersion
                     sdkDirectory = plugin.project.android.sdkDirectory
                     minSdkVersion = plugin.project.android.defaultConfig.minSdkVersion.apiLevel as int
                     compileSdkVersion = plugin.project.android.compileSdkVersion.substring(8) as int
